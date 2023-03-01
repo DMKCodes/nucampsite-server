@@ -2,10 +2,11 @@ const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
 const logger = require('morgan');
-const session = require('express-session');
-const FileStore = require('session-file-store')(session);
+const passport = require('passport');
+const authenticate = require('./authenticate');
+const config = require('./config');
 
-const indexRouter = require('./routes/index');
+const indexRouter = require('./routes/indexRouter');
 const userRouter = require('./routes/userRouter');
 const campsiteRouter = require('./routes/campsiteRouter');
 const promotionRouter = require('./routes/promotionRouter');
@@ -13,7 +14,7 @@ const partnerRouter = require('./routes/partnerRouter');
 
 // configure mongodb
 const mongoose = require('mongoose');
-const url = 'mongodb://localhost:27017/nucampsite';
+const url = config.mongoUrl;
 const connect = mongoose.connect(url, {
     useCreateIndex: true,
     useFindAndModify: false,
@@ -35,37 +36,8 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// configure express session
-app.use(session({
-    name: 'session-id',
-    secret: '12345-54321',
-    saveUninitialized: false,
-    resave: false,
-    store: new FileStore()
-}));
-
 app.use('/', indexRouter);
 app.use('/users', userRouter);
-
-// authentication
-function auth(req, res, next) {
-    console.log(req.session);
-
-    if (!req.session.user) {
-        const err = new Error('You are not authenticated!');
-        err.status = 401;
-        return next(err);
-    } else {
-        if (req.session.user === 'authenticated') {
-            return next();
-        } else {
-            const err = new Error('You are not authenticated!');
-            err.status = 401;
-            return next(err);
-        }
-    }
-};
-app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -74,12 +46,12 @@ app.use('/promotions', promotionRouter);
 app.use('/partners', partnerRouter);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use((req, res, next) => {
     next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use((err, req, res, next) => {
     // set locals, only providing error in development
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
