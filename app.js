@@ -3,7 +3,6 @@ const express = require('express');
 const path = require('path');
 const logger = require('morgan');
 const passport = require('passport');
-const authenticate = require('./authenticate');
 const config = require('./config');
 
 const indexRouter = require('./routes/indexRouter');
@@ -35,6 +34,8 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+app.use(passport.initialize());
 
 app.use('/', indexRouter);
 app.use('/users', userRouter);
