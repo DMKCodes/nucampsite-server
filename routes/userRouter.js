@@ -4,25 +4,44 @@ const User = require('../models/user');
 const passport = require('passport');
 const authenticate = require('../authenticate');
 
-/* GET users listing. */
-userRouter.get('/', (res) => {
-    res.send('respond with a resource');
+userRouter.get('/', (req, res, next) => {
+    User.find()
+    .then(users => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(users);
+    })
+    .catch(err => next(err));
 });
 
 userRouter.post('/signup', (req, res) => {
     User.register(
         new User({ username: req.body.username }),
         req.body.password,
-        err => {
+        (err, user) => {
             if (err) {
                 res.statusCode = 500;
                 res.setHeader('Content-Type', 'application/json');
                 res.json({ err });
             } else {
-                passport.authenticate('local')(req, res, () => {
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.json({ success: true, status: 'Registration successful.' });
+                if (req.body.firstame) {
+                    user.firstname = req.body.firstname;
+                }
+                if (req.body.lastname) {
+                    user.lastname = req.body.lastname;
+                }
+                user.save(err => {
+                    if (err) {
+                        res.statusCode = 500;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json({ err });
+                        return;
+                    }
+                    passport.authenticate('local')(req, res, () => {
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json({ success: true, status: 'Registration successful.' });
+                    });
                 });
             }
         }
@@ -30,7 +49,7 @@ userRouter.post('/signup', (req, res) => {
 });
 
 userRouter.post('/login', passport.authenticate('local'), (req, res) => {
-    const token = authenticate.getToken({_id: req.user._id});
+    const token = authenticate.getToken({ _id: req.user._id });
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.json({success: true, token: token, status: 'You are successfully logged in!'});

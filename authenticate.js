@@ -36,4 +36,4 @@ exports.jwtPassport = passport.use(
     )
 );
 
-exports.verifyUser = passport.authenticate('jwt', {session: false});
+exports.verifyUser = passport.authenticate('jwt', { session: false });
