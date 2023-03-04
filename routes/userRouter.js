@@ -4,7 +4,7 @@ const User = require('../models/user');
 const passport = require('passport');
 const authenticate = require('../authenticate');
 
-userRouter.get('/', (req, res, next) => {
+userRouter.get('/', [authenticate.verifyUser, authenticate.verifyAdmin], (req, res, next) => {
     User.find()
     .then(users => {
         res.statusCode = 200;
@@ -52,11 +52,11 @@ userRouter.post('/login', passport.authenticate('local'), (req, res) => {
     const token = authenticate.getToken({ _id: req.user._id });
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-    res.json({success: true, token: token, status: 'You are successfully logged in!'});
+    res.json({ success: true, token: token, status: 'You are successfully logged in!' });
 });
 
 userRouter.get('/logout', (req, res, next) => {
-    if (req.session) {
+    if (req.user) {
         req.session.destroy();
         res.clearCookie('session-id');
         res.redirect('/');
